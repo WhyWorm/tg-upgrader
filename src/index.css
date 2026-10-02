@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --apple-blue: #007AFF;
+  --apple-blue-light: #0A84FF;
+  --apple-bg: #000000;
+  --apple-card: #1c1c1e;
+  --apple-card-secondary: #2c2c2e;
+  --apple-border: rgba(255, 255, 255, 0.08);
+  --apple-border-active: #007AFF;
+  --apple-gray: #8e8e93;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  background-color: #000000;
+  color: #ffffff;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Crisp rendering without muddy blur */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Apple iOS Card */
+.ios-card {
+  background-color: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+}
+
+.ios-card-elevated {
+  background-color: #2c2c2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+}
+
+/* Apple Button */
+.ios-btn-blue {
+  background-color: #007AFF;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 14px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ios-btn-blue:hover {
+  background-color: #0A84FF;
+}
+.ios-btn-blue:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* Apple Segmented Control */
+.ios-segmented {
+  background-color: #1c1c1e;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ios-segmented-active {
+  background-color: #2c2c2e;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Custom subtle iOS scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c2c2e;
+  border-radius: 9999px;
+}
+
+/* Hide spin buttons */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
