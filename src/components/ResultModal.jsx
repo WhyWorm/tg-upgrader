@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { playWin, playLose, playCash, playClick } from '../utils/sound';
 import { haptics } from '../utils/haptics';
@@ -18,6 +18,14 @@ export default function ResultModal({
   onQuickSell,
   onTryAgain
 }) {
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -39,17 +47,37 @@ export default function ResultModal({
     }
   }, [isOpen, won]);
 
+  const handleDismiss = (callback) => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      if (callback) callback();
+      else if (onClose) onClose();
+    }, 200);
+  };
+
   if (!isOpen) return null;
 
   const targetNum = targetItem?.id ? targetItem.id.replace('gift-', '') : '1';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 select-none">
-      <div className={`relative w-full max-w-sm rounded-[30px] p-6 text-center shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden ${
-        won 
-          ? 'apple-glass-card border-[#007AFF]/50' 
-          : 'apple-glass-card border-white/15'
-      }`}>
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl select-none ${
+        isClosing ? 'apple-modal-backdrop-out' : 'apple-modal-backdrop-in'
+      }`}
+      onClick={() => handleDismiss(onClose)}
+    >
+      <div 
+        className={`relative w-full max-w-sm rounded-[30px] p-6 text-center shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden ${
+          isClosing ? 'apple-modal-card-out' : 'apple-modal-card-in'
+        } ${
+          won 
+            ? 'apple-glass-card border-[#007AFF]/50' 
+            : 'apple-glass-card border-white/15'
+        }`}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Ambient Backlight */}
         <div className={`absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl pointer-events-none ${
           won ? 'bg-gradient-to-b from-[#007AFF]/35 to-emerald-500/25' : 'bg-red-500/15'
@@ -57,7 +85,7 @@ export default function ResultModal({
 
         {/* Status Header */}
         <div className="relative z-10 flex flex-col items-center">
-          <div className={`w-14 h-14 rounded-[20px] flex items-center justify-center mb-3 shadow-lg ${
+          <div className={`w-14 h-14 rounded-[20px] flex items-center justify-center mb-3 shadow-lg apple-icon-pop ${
             won 
               ? 'apple-btn-primary text-white' 
               : 'apple-glass text-rose-400 border border-rose-500/30'
@@ -65,11 +93,11 @@ export default function ResultModal({
             {won ? <Trophy className="w-7 h-7 stroke-[2.5]" /> : <XCircle className="w-7 h-7 stroke-[2]" />}
           </div>
 
-          <h2 className="text-xl font-black text-white tracking-tight">
+          <h2 className="text-xl font-black text-white tracking-tight apple-cascade-1">
             {won ? 'УСПЕШНЫЙ АПГРЕЙД' : 'НЕУДАЧА'}
           </h2>
 
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center gap-2 mt-1.5 apple-cascade-1">
             <span className={`text-xs font-mono font-black px-2.5 py-0.5 rounded-full ${
               won ? 'bg-[#007AFF] text-white' : 'apple-pill-badge text-rose-300'
             }`}>
@@ -82,7 +110,7 @@ export default function ResultModal({
         </div>
 
         {/* Center Item Bento Pod */}
-        <div className="relative z-10 my-4 p-4 rounded-[22px] apple-glass border border-white/10">
+        <div className="relative z-10 my-4 p-4 rounded-[22px] apple-glass border border-white/10 apple-cascade-2">
           {won && targetItem ? (
             <div className="flex flex-col items-center">
               <span className="text-[10px] text-white/50 font-extrabold uppercase tracking-widest mb-1">
@@ -128,15 +156,15 @@ export default function ResultModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="relative z-10 flex flex-col gap-2 mt-2">
+        <div className="relative z-10 flex flex-col gap-2 mt-2 apple-cascade-3">
           {won ? (
             <>
               <button
                 onClick={() => {
                   playClick();
-                  onClose();
+                  handleDismiss(onClose);
                 }}
-                className="w-full h-12 rounded-[18px] apple-btn-primary text-white font-black text-xs tracking-tight flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                className="w-full h-12 rounded-[18px] apple-btn-primary text-white font-black text-xs tracking-tight flex items-center justify-center gap-1.5 transition-all"
               >
                 <span>ЗАБРАТЬ В ИНВЕНТАРЬ</span>
                 <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -146,9 +174,9 @@ export default function ResultModal({
                 <button
                   onClick={() => {
                     playCash();
-                    onQuickSell(targetItem);
+                    handleDismiss(() => onQuickSell(targetItem));
                   }}
-                  className="w-full h-10 rounded-[16px] apple-pill-badge text-white/70 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                  className="w-full h-10 rounded-[16px] apple-pill-badge text-white/70 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
                 >
                   Быстрая продажа за {(targetItem.priceTon * 0.95).toFixed(2)} TON
                 </button>
@@ -158,9 +186,9 @@ export default function ResultModal({
             <button
               onClick={() => {
                 playClick();
-                onTryAgain ? onTryAgain() : onClose();
+                handleDismiss(onTryAgain || onClose);
               }}
-              className="w-full h-12 rounded-[18px] apple-glass border border-white/20 hover:bg-white/10 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+              className="w-full h-12 rounded-[18px] apple-glass border border-white/20 hover:bg-white/10 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all"
             >
               <RotateCcw className="w-4 h-4 stroke-[2.5]" />
               ПОПРОБОВАТЬ СНОВА

@@ -14,6 +14,17 @@ export default function FinanceModal({
   const [amount, setAmount] = useState(10);
   const [address, setAddress] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleDismiss = (callback) => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      if (callback) callback();
+      else if (onClose) onClose();
+    }, 200);
+  };
 
   if (!isOpen) return null;
 
@@ -38,14 +49,21 @@ export default function FinanceModal({
 
     setTimeout(() => {
       setIsSuccess(false);
-      onClose();
+      handleDismiss(onClose);
     }, 1200);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 select-none">
+    <div 
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xl select-none ${
+        isClosing ? 'apple-modal-backdrop-out' : 'apple-modal-backdrop-in'
+      }`}
+      onClick={() => handleDismiss(onClose)}
+    >
       <div 
-        className="w-full max-w-sm apple-glass border-t sm:border border-white/20 rounded-t-[32px] sm:rounded-[32px] p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9)] relative overflow-hidden"
+        className={`w-full max-w-sm apple-glass border-t sm:border border-white/20 rounded-t-[32px] sm:rounded-[32px] p-6 shadow-[0_25px_60px_rgba(0,0,0,0.9)] relative overflow-hidden ${
+          isClosing ? 'apple-sheet-out' : 'apple-sheet-in'
+        }`}
         onClick={e => e.stopPropagation()}
       >
         {/* iOS Grabber Handle */}
@@ -72,8 +90,8 @@ export default function FinanceModal({
           </div>
 
           <button
-            onClick={() => { playClick(); onClose(); }}
-            className="w-8 h-8 rounded-full apple-pill-badge flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-90"
+            onClick={() => { playClick(); handleDismiss(onClose); }}
+            className="w-8 h-8 rounded-full apple-pill-badge flex items-center justify-center text-white/60 hover:text-white transition-all"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
           </button>
