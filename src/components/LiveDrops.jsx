@@ -12,48 +12,43 @@ export default function LiveDrops({ latestDrop }) {
   }, [latestDrop]);
 
   return (
-    <div className="w-full bg-[#17212b] border-b border-[#233244] py-1.5 px-3 overflow-hidden select-none">
-      <div className="max-w-md mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
-        <div className="flex items-center gap-1.5 shrink-0 px-2 py-0.5 rounded bg-[#229ED9]/15 text-[10px] text-[#53aee2] font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#53aee2] animate-pulse" />
+    <div className="w-full bg-black/60 backdrop-blur-md border-b border-white/[0.08] py-2 px-4 overflow-hidden select-none">
+      <div className="max-w-md mx-auto flex items-center gap-2.5 overflow-x-auto no-scrollbar scroll-smooth">
+        {/* Live Badge */}
+        <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[9px] text-emerald-400 font-black tracking-wider uppercase">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse" />
           Live
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Live Drops Horizontal Capsules */}
+        <div className="flex items-center gap-2 shrink-0">
           {drops.map((drop, i) => (
             <div
               key={drop.id + '-' + i}
-              className={`shrink-0 flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-all ${
+              className={`shrink-0 flex items-center gap-2 px-2.5 py-1 rounded-full apple-glass transition-all ${
                 drop.won
-                  ? 'bg-[#1e2c3a] border-[#233244] text-white'
-                  : 'bg-[#182533] border-[#233244]/60 text-[#7e8d9b]'
+                  ? 'border-emerald-500/25 text-white'
+                  : 'border-white/[0.08] text-white/50'
               }`}
             >
-              <div className="w-6 h-6 shrink-0 relative flex items-center justify-center p-0.5 rounded bg-[#131b24]">
+              <div className="w-5 h-5 shrink-0 relative flex items-center justify-center">
                 {drop.image ? (
-                  <img src={drop.image} alt={drop.targetName} className="w-full h-full object-contain" />
+                  <img src={drop.image} alt={drop.targetName} className="w-full h-full object-contain filter drop-shadow-sm" />
                 ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-[#229ED9]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#0A84FF]" />
                 )}
               </div>
 
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] font-semibold truncate max-w-[80px] text-white">
-                    {drop.targetName}
-                  </span>
-                  <span className={`text-[9px] font-mono font-bold px-1 rounded ${
-                    drop.won ? 'bg-[#229ED9] text-white' : 'bg-rose-500/20 text-rose-400'
-                  }`}>
-                    x{drop.multiplier.toFixed(1)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[9px] text-[#7e8d9b] font-mono">
-                  <span>{drop.priceTon.toFixed(1)} TON</span>
-                  <span className={drop.won ? 'text-[#53aee2] font-bold' : 'text-rose-400'}>
-                    {drop.won ? 'WIN' : 'LOSE'}
-                  </span>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold truncate max-w-[75px] text-white">
+                  {drop.targetName}
+                </span>
+
+                <span className={`text-[9px] font-mono font-black px-1.5 py-0.2 rounded-full ${
+                  drop.won ? 'bg-[#007AFF] text-white' : 'apple-pill-badge text-rose-300'
+                }`}>
+                  x{drop.multiplier.toFixed(1)}
+                </span>
               </div>
             </div>
           ))}

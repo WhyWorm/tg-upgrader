@@ -24,8 +24,8 @@ export default function App() {
       if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
-        window.Telegram.WebApp.setHeaderColor('#0c1017');
-        window.Telegram.WebApp.setBackgroundColor('#0c1017');
+        window.Telegram.WebApp.setHeaderColor('#000000');
+        window.Telegram.WebApp.setBackgroundColor('#000000');
       }
     } catch (e) {}
   }, []);
@@ -293,9 +293,6 @@ export default function App() {
         soundOn={soundOn}
         setSoundOn={setSoundOn}
       />
-
-      {/* Live Drops Ticker */}
-      <LiveDrops latestDrop={latestDrop} />
 
       {/* Main View Router */}
       <main className="flex-1 flex flex-col">

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { playTick, playWhoosh } from '../utils/sound';
 import { haptics } from '../utils/haptics';
 import { ArrowLeftRight } from 'lucide-react';
-import { TELEGRAM_GIFTS_CATALOG } from '../data/gifts';
 
 export default function UpgraderWheel({
   chance = 40,
@@ -14,13 +13,12 @@ export default function UpgraderWheel({
   onSpinEnd,
   targetItem = null
 }) {
-  const [needleAngle, setNeedleAngle] = useState(0);
-  const [rollingEmojiIndex, setRollingEmojiIndex] = useState(0);
+  const needleRef = useRef(null);
+  const currentAngleRef = useRef(0);
   const animationRef = useRef(null);
-  const lastTickAngleRef = useRef(0);
-  const emojiCycleRef = useRef(null);
+  const lastTickTimeRef = useRef(0);
 
-  const radius = 94;
+  const radius = 96;
   const center = 120;
   const circumference = 2 * Math.PI * radius;
 
@@ -28,75 +26,56 @@ export default function UpgraderWheel({
   const arcLength = (safeChance / 100) * circumference;
   const rotationOffset = -90 + (rollDirection === 'under' ? 0 : 360 - (safeChance * 3.6));
 
+  // Initialize needle position
   useEffect(() => {
-    if (!isRolling) {
-      if (finalDegree !== null) {
-        setNeedleAngle(finalDegree);
-      }
-      if (emojiCycleRef.current) {
-        clearInterval(emojiCycleRef.current);
-        emojiCycleRef.current = null;
-      }
-      return;
+    if (!isRolling && needleRef.current) {
+      const angle = finalDegree !== null ? finalDegree : currentAngleRef.current;
+      needleRef.current.style.transform = `rotate(${angle}deg)`;
+      currentAngleRef.current = angle;
     }
+  }, [finalDegree, isRolling]);
+
+  useEffect(() => {
+    if (!isRolling) return;
 
     playWhoosh();
     haptics.impact('medium');
 
     const startTime = performance.now();
-    const duration = 4600;
+    const duration = 4400; // 4.4s smooth physics
     const baseRotations = 5;
     const targetDegree = finalDegree !== null ? finalDegree : Math.random() * 360;
     const totalRotation = baseRotations * 360 + targetDegree;
-    const startAngle = needleAngle % 360;
+    const startAngle = currentAngleRef.current % 360;
 
-    lastTickAngleRef.current = startAngle;
-
-    let cycleIntervalMs = 70;
-    const catalogLen = TELEGRAM_GIFTS_CATALOG.length;
-
-    emojiCycleRef.current = setInterval(() => {
-      setRollingEmojiIndex(prev => (prev + 1) % catalogLen);
-    }, cycleIntervalMs);
-
-    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3.8);
+    // Direct GPU quartic ease-out for ultra-smooth decel
+    const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(1, elapsed / duration);
-      const eased = easeOutCubic(progress);
+      const eased = easeOutQuart(progress);
 
       const currentAngle = startAngle + (totalRotation - startAngle) * eased;
-      setNeedleAngle(currentAngle);
+      currentAngleRef.current = currentAngle;
 
-      if (progress > 0.6 && cycleIntervalMs < 160) {
-        cycleIntervalMs = 160;
-        if (emojiCycleRef.current) clearInterval(emojiCycleRef.current);
-        emojiCycleRef.current = setInterval(() => {
-          setRollingEmojiIndex(prev => (prev + 1) % catalogLen);
-        }, cycleIntervalMs);
-      } else if (progress > 0.85 && cycleIntervalMs < 320) {
-        cycleIntervalMs = 320;
-        if (emojiCycleRef.current) clearInterval(emojiCycleRef.current);
-        emojiCycleRef.current = setInterval(() => {
-          setRollingEmojiIndex(prev => (prev + 1) % catalogLen);
-        }, cycleIntervalMs);
+      // Update needle directly via GPU transform (0 React re-renders)
+      if (needleRef.current) {
+        needleRef.current.style.transform = `rotate(${currentAngle}deg)`;
       }
 
-      if (Math.abs(currentAngle - lastTickAngleRef.current) >= 16) {
-        const speed = 1 - progress;
-        playTick(0.8 + speed * 0.4);
-        haptics.impact('light');
-        lastTickAngleRef.current = currentAngle;
+      // Throttled audio tick (max once every 110ms to prevent audio-thread locks)
+      if (currentTime - lastTickTimeRef.current >= 110 && progress < 0.95) {
+        lastTickTimeRef.current = currentTime;
+        playTick(0.9 + (1 - progress) * 0.3);
       }
 
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        setNeedleAngle(targetDegree);
-        if (emojiCycleRef.current) {
-          clearInterval(emojiCycleRef.current);
-          emojiCycleRef.current = null;
+        currentAngleRef.current = targetDegree;
+        if (needleRef.current) {
+          needleRef.current.style.transform = `rotate(${targetDegree}deg)`;
         }
         if (onSpinEnd) {
           onSpinEnd(targetDegree);
@@ -107,59 +86,69 @@ export default function UpgraderWheel({
     animationRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (emojiCycleRef.current) clearInterval(emojiCycleRef.current);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
   }, [isRolling]);
 
-  const activeRollingGift = TELEGRAM_GIFTS_CATALOG[rollingEmojiIndex] || targetItem;
-
   return (
-    <div className="relative flex flex-col items-center justify-center select-none py-1">
-      {/* Crisp Cupertino Activity Gauge */}
+    <div className="relative flex flex-col items-center justify-center select-none py-2 transform-gpu">
+      {/* Apple Activity Gauge Ring Container */}
       <div className="relative w-64 h-64 flex items-center justify-center">
-        <svg viewBox="0 0 240 240" className="w-full h-full">
-          {/* Subtle Outer Track */}
+        {/* Zero-cost GPU radial aura */}
+        <div className="absolute inset-4 rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(0,122,255,0.12)_0%,transparent_70%)]" />
+
+        <svg viewBox="0 0 240 240" className="w-full h-full relative z-10">
+          <defs>
+            <linearGradient id="appleWheelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#00F0FF" />
+              <stop offset="50%" stopColor="#0A84FF" />
+              <stop offset="100%" stopColor="#007AFF" />
+            </linearGradient>
+          </defs>
+
+          {/* Outer Track Ring */}
           <circle
             cx={center}
             cy={center}
-            r={radius + 8}
+            r={radius + 12}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.06)"
-            strokeWidth="1.5"
+            stroke="rgba(255, 255, 255, 0.08)"
+            strokeWidth="1"
           />
 
-          {/* Background Activity Track */}
+          {/* Recessed Activity Track Groove */}
           <circle
             cx={center}
             cy={center}
             r={radius}
-            fill="#1c1c1e"
-            stroke="#2c2c2e"
-            strokeWidth="12"
+            fill="rgba(14, 14, 18, 0.85)"
+            stroke="rgba(255, 255, 255, 0.08)"
+            strokeWidth="14"
           />
 
-          {/* Razor-Sharp Apple Blue Arc */}
+          {/* Electric Apple Blue Activity Ring */}
           <circle
             cx={center}
             cy={center}
             r={radius}
             fill="none"
-            stroke="#007AFF"
-            strokeWidth="12"
+            stroke="url(#appleWheelGradient)"
+            strokeWidth="14"
             strokeDasharray={`${arcLength} ${circumference}`}
             strokeDashoffset="0"
             strokeLinecap="round"
             transform={`rotate(${rotationOffset} ${center} ${center})`}
           />
 
-          {/* Inner Clean Center Disc */}
+          {/* Inner Disc */}
           <circle
             cx={center}
             cy={center}
-            r={radius - 12}
-            fill="#121214"
-            stroke="rgba(255, 255, 255, 0.08)"
+            r={radius - 14}
+            fill="rgba(18, 18, 22, 0.95)"
+            stroke="rgba(255, 255, 255, 0.12)"
             strokeWidth="1.5"
           />
 
@@ -167,65 +156,49 @@ export default function UpgraderWheel({
           <circle
             cx={center}
             cy={center - radius}
-            r="3"
+            r="3.5"
             fill="#ffffff"
+            stroke="#007AFF"
+            strokeWidth="2"
           />
         </svg>
 
-        {/* Sharp Needle Indicator */}
+        {/* Direct GPU Needle Layer (0 React re-renders during spin) */}
         <div
-          className="absolute inset-0 pointer-events-none flex items-center justify-center transition-transform duration-75"
-          style={{
-            transform: `rotate(${needleAngle}deg)`,
-          }}
+          ref={needleRef}
+          className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center transform-gpu will-change-transform"
+          style={{ transform: `rotate(${currentAngleRef.current}deg)` }}
         >
-          <div className="absolute top-[17px] w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[15px] border-b-white" />
-          <div className="w-3.5 h-3.5 rounded-full bg-white ring-2 ring-[#007AFF]" />
+          <div className="absolute top-[13px] w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#00F0FF,0_0_2px_#ffffff] ring-2 ring-[#007AFF]" />
         </div>
 
-        {/* Center Display: Crisp SF Pro Typography & Emoji Reel */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-4">
-          {isRolling ? (
-            <div className="flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#2c2c2e] border border-[#007AFF] flex items-center justify-center p-2.5 shadow-lg">
-                <img
-                  src={activeRollingGift?.image}
-                  alt="rolling"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <span className="text-[12px] font-bold text-white mt-1.5 tracking-tight truncate max-w-[120px]">
-                {activeRollingGift?.name || 'Крутим...'}
+        {/* Center Display: Pure Apple Minimalist Multiplier & Chance */}
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none text-center p-4">
+          <div className="flex flex-col items-center justify-center">
+            {/* Multiplier in Apple Display Font */}
+            <div className="text-4xl font-black text-white font-mono tracking-tight leading-none">
+              x{multiplier.toFixed(2)}
+            </div>
+
+            {/* Chance Capsule */}
+            <div className="flex items-center gap-1.5 mt-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-[#007AFF]/25 to-cyan-500/20 border border-[#007AFF]/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00F0FF] animate-pulse" />
+              <span className="text-xs font-black font-mono text-cyan-200 tracking-tight">
+                {safeChance.toFixed(2)}%
               </span>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center">
-              {targetItem && (
-                <div className="w-10 h-10 mb-0.5 flex items-center justify-center">
-                  <img src={targetItem.image} alt="" className="w-full h-full object-contain" />
-                </div>
-              )}
-              <div className="text-3xl font-extrabold text-white font-mono tracking-tight leading-tight">
-                x{multiplier.toFixed(2)}
-              </div>
-              <div className="flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full bg-[#007AFF]/20 text-[#007AFF]">
-                <span className="text-[11px] font-bold font-mono">
-                  {safeChance.toFixed(2)}%
-                </span>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Segmented Direction Switcher */}
+      {/* Segmented Direction Capsule */}
       <button
         onClick={onToggleRollDirection}
         disabled={isRolling}
-        className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#1c1c1e] hover:bg-[#2c2c2e] text-[#8e8e93] hover:text-white border border-white/[0.08] transition-colors"
+        className="mt-2 flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold apple-pill-badge hover:bg-white/15 text-white/70 hover:text-white transition-all active:scale-95"
       >
-        <ArrowLeftRight className="w-3.5 h-3.5 text-[#007AFF]" />
-        <span>{rollDirection === 'under' ? 'Сектор: Слева' : 'Сектор: Справа'}</span>
+        <ArrowLeftRight className="w-3.5 h-3.5 text-[#0A84FF]" />
+        <span>{rollDirection === 'under' ? 'Сектор: 0.00 → ' + safeChance.toFixed(1) : 'Сектор: ' + (100 - safeChance).toFixed(1) + ' → 100.0'}</span>
       </button>
     </div>
   );

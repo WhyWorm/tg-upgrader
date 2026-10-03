@@ -5,42 +5,37 @@ import JavaScriptObfuscator from 'javascript-obfuscator';
 const distDir = 'C:/Users/User/.gemini/antigravity/scratch/tg-upgrader/dist';
 const assetsDir = path.join(distDir, 'assets');
 
-console.log('--- Starting Heavy Code Obfuscation ---');
+console.log('--- Starting High-Performance Code Obfuscation ---');
 
 const files = fs.readdirSync(assetsDir);
 const jsFiles = files.filter(f => f.endsWith('.js'));
 
 for (const jsFile of jsFiles) {
   const fullPath = path.join(assetsDir, jsFile);
-  console.log(`Encrypting & Obfuscating: ${jsFile}...`);
+  console.log(`Encrypting & Protecting: ${jsFile}...`);
   const code = fs.readFileSync(fullPath, 'utf8');
 
   const obfuscatedResult = JavaScriptObfuscator.obfuscate(code, {
     compact: true,
-    controlFlowFlattening: true,
-    controlFlowFlatteningThreshold: 1.0,
-    deadCodeInjection: true,
-    deadCodeInjectionThreshold: 0.35,
     stringArray: true,
-    stringArrayEncoding: ['rc4', 'base64'],
-    stringArrayThreshold: 1.0,
+    stringArrayEncoding: ['base64'],
+    stringArrayThreshold: 0.8,
     stringArrayRotate: true,
     stringArrayShuffle: true,
-    stringArrayWrappersCount: 3,
-    stringArrayWrappersChainedCalls: true,
-    splitStrings: true,
-    splitStringsChunkLength: 4,
-    transformObjectKeys: true,
-    numbersToExpressions: true,
-    selfDefending: true,
-    simplify: false,
-    renameGlobals: false,
-    identifierNamesGenerator: 'hexadecimal'
+    stringArrayWrappersCount: 1,
+    splitStrings: false,
+    transformObjectKeys: false,
+    identifierNamesGenerator: 'hexadecimal',
+    controlFlowFlattening: false,
+    deadCodeInjection: false,
+    numbersToExpressions: false,
+    selfDefending: false,
+    simplify: true
   });
 
   const obfuscatedCode = obfuscatedResult.getObfuscatedCode();
   fs.writeFileSync(fullPath, obfuscatedCode, 'utf8');
-  console.log(`[OK] Successfully encrypted ${jsFile} (Output size: ${obfuscatedCode.length} bytes)`);
+  console.log(`[OK] Successfully encrypted ${jsFile} (Optimized size: ${obfuscatedCode.length} bytes)`);
 }
 
 // Re-generate test.html with the encrypted code

@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { playWin, playLose, playCash, playClick } from '../utils/sound';
 import { haptics } from '../utils/haptics';
-import { Trophy, XCircle, DollarSign, RotateCcw } from 'lucide-react';
+import { Trophy, XCircle, RotateCcw, ArrowRight } from 'lucide-react';
+import LottiePlayer from './LottiePlayer';
 
 export default function ResultModal({
   isOpen,
@@ -26,10 +27,10 @@ export default function ResultModal({
 
       try {
         confetti({
-          particleCount: 80,
-          spread: 70,
+          particleCount: 70,
+          spread: 60,
           origin: { y: 0.6 },
-          colors: ['#229ED9', '#53aee2', '#ffffff'],
+          colors: ['#007AFF', '#00F0FF', '#FFD60A', '#ffffff'],
         });
       } catch (e) {}
     } else {
@@ -40,81 +41,94 @@ export default function ResultModal({
 
   if (!isOpen) return null;
 
+  const targetNum = targetItem?.id ? targetItem.id.replace('gift-', '') : '1';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className={`relative w-full max-w-sm rounded-2xl p-5 border text-center shadow-xl ${
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 select-none">
+      <div className={`relative w-full max-w-sm rounded-[30px] p-6 text-center shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden ${
         won 
-          ? 'bg-[#17212b] border-[#229ED9]' 
-          : 'bg-[#17212b] border-[#233244]'
+          ? 'apple-glass-card border-[#007AFF]/50' 
+          : 'apple-glass-card border-white/15'
       }`}>
+        {/* Ambient Backlight */}
+        <div className={`absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl pointer-events-none ${
+          won ? 'bg-gradient-to-b from-[#007AFF]/35 to-emerald-500/25' : 'bg-red-500/15'
+        }`} />
+
         {/* Status Header */}
-        <div className="flex flex-col items-center">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${
+        <div className="relative z-10 flex flex-col items-center">
+          <div className={`w-14 h-14 rounded-[20px] flex items-center justify-center mb-3 shadow-lg ${
             won 
-              ? 'bg-[#229ED9] text-white' 
-              : 'bg-[#1e2c3a] text-rose-400 border border-rose-500/30'
+              ? 'apple-btn-primary text-white' 
+              : 'apple-glass text-rose-400 border border-rose-500/30'
           }`}>
-            {won ? <Trophy className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
+            {won ? <Trophy className="w-7 h-7 stroke-[2.5]" /> : <XCircle className="w-7 h-7 stroke-[2]" />}
           </div>
 
-          <h2 className="text-lg font-bold text-white">
-            {won ? 'Успешный апгрейд!' : 'Неудача'}
+          <h2 className="text-xl font-black text-white tracking-tight">
+            {won ? 'УСПЕШНЫЙ АПГРЕЙД' : 'НЕУДАЧА'}
           </h2>
 
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-              won ? 'bg-[#229ED9] text-white' : 'bg-[#1e2c3a] text-rose-400'
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className={`text-xs font-mono font-black px-2.5 py-0.5 rounded-full ${
+              won ? 'bg-[#007AFF] text-white' : 'apple-pill-badge text-rose-300'
             }`}>
               x{multiplier.toFixed(2)}
             </span>
-            <span className="text-xs text-[#7e8d9b] font-mono">
+            <span className="text-xs text-white/50 font-mono font-medium">
               Шанс: {chance.toFixed(1)}%
             </span>
           </div>
         </div>
 
-        {/* Center Item */}
-        <div className="my-4 p-4 rounded-xl bg-[#131b24] border border-[#233244]">
+        {/* Center Item Bento Pod */}
+        <div className="relative z-10 my-4 p-4 rounded-[22px] apple-glass border border-white/10">
           {won && targetItem ? (
             <div className="flex flex-col items-center">
-              <span className="text-[10px] text-[#7e8d9b] uppercase tracking-wider mb-1">
-                Вы получили
+              <span className="text-[10px] text-white/50 font-extrabold uppercase tracking-widest mb-1">
+                ВЫ ПОЛУЧИЛИ
               </span>
 
-              <div className="w-24 h-24 my-1 flex items-center justify-center">
-                <img
-                  src={targetItem.image}
-                  alt={targetItem.name}
-                  className="max-h-full max-w-full object-contain animate-tg-float"
+              <div className="w-24 h-24 my-2 flex items-center justify-center filter drop-shadow-xl">
+                <LottiePlayer
+                  src={`./lottie/gift_${targetNum}.json`}
+                  fallbackImage={targetItem.image}
+                  className="w-full h-full object-contain"
                 />
               </div>
 
-              <span className="text-sm font-bold text-white mt-1">
+              <span className="text-sm font-black text-white mt-1">
                 {targetItem.name}
               </span>
-              <span className="text-[11px] text-[#7e8d9b] font-mono">
+              <span className="text-[11px] text-white/50 font-mono mt-0.5">
                 {targetItem.serialNumber || '#00142'} • {targetItem.stars || 50} Stars
               </span>
 
-              <div className="mt-2 px-3 py-1 rounded bg-[#229ED9]/15 text-[#53aee2] font-mono font-bold text-xs">
+              <div className="mt-3 px-3.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono font-black text-xs">
                 +{targetItem.priceTon.toFixed(2)} TON (~${(targetItem.priceTon * 5.25).toFixed(0)})
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center py-2">
-              <span className="text-xs text-slate-300 font-medium mb-1">
-                Подарок сгорел
+            <div className="flex flex-col items-center py-3">
+              <span className="text-xs text-white/70 font-semibold mb-2">
+                Стрелка остановилась вне выигрышного сектора
               </span>
-              <div className="text-xs text-[#7e8d9b] font-mono space-y-1">
-                <div>Стрелка: <span className="text-rose-400 font-bold">{rollDegree ? rollDegree.toFixed(1) : 0}°</span></div>
-                <div>Выигрышный сектор: <span className="text-white">{winArc}</span></div>
+              <div className="text-xs text-white/50 font-mono space-y-1 bg-black/40 px-3 py-2 rounded-xl w-full">
+                <div className="flex justify-between">
+                  <span>Выпало:</span>
+                  <span className="text-rose-400 font-bold">{rollDegree ? rollDegree.toFixed(1) : 0}°</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Сектор:</span>
+                  <span className="text-white font-bold">{winArc}</span>
+                </div>
               </div>
             </div>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-2">
+        <div className="relative z-10 flex flex-col gap-2 mt-2">
           {won ? (
             <>
               <button
@@ -122,9 +136,10 @@ export default function ResultModal({
                   playClick();
                   onClose();
                 }}
-                className="w-full py-2.5 rounded-lg bg-[#229ED9] hover:bg-[#2aabeb] text-white font-semibold text-xs transition-colors"
+                className="w-full h-12 rounded-[18px] apple-btn-primary text-white font-black text-xs tracking-tight flex items-center justify-center gap-1.5 transition-all active:scale-95"
               >
-                Забрать в инвентарь
+                <span>ЗАБРАТЬ В ИНВЕНТАРЬ</span>
+                <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
 
               {onQuickSell && targetItem && (
@@ -133,9 +148,8 @@ export default function ResultModal({
                     playCash();
                     onQuickSell(targetItem);
                   }}
-                  className="w-full py-2 rounded-lg bg-[#1e2c3a] hover:bg-[#233344] text-slate-300 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full h-10 rounded-[16px] apple-pill-badge text-white/70 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
                 >
-                  <DollarSign className="w-3.5 h-3.5" />
                   Быстрая продажа за {(targetItem.priceTon * 0.95).toFixed(2)} TON
                 </button>
               )}
@@ -146,10 +160,10 @@ export default function ResultModal({
                 playClick();
                 onTryAgain ? onTryAgain() : onClose();
               }}
-              className="w-full py-2.5 rounded-lg bg-[#1e2c3a] hover:bg-[#233344] text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full h-12 rounded-[18px] apple-glass border border-white/20 hover:bg-white/10 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Попробовать снова
+              <RotateCcw className="w-4 h-4 stroke-[2.5]" />
+              ПОПРОБОВАТЬ СНОВА
             </button>
           )}
         </div>
